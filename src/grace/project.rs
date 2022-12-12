@@ -1,6 +1,8 @@
 use std::{path::PathBuf, io::BufReader};
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
+use crate::grace::package::PackageList;
+
 use super::{Registry, git};
 use super::package::{Package, PackageVersion};
 use serde::{Serialize, Deserialize};
@@ -15,18 +17,30 @@ pub struct Project
     project_dir: PathBuf
 }
 
+// This folder is used to holde checked out registry data.
+pub const GRACE_ROOT_FOLDER : &str = ".grace";
+pub const GRACE_PROJECT_FILE_NAME: &str = "grace-config.json";
+pub const GRACE_PACKAGE_FILE_NAME: &str = "grace.json";
+pub const GRACE_PACKAGE_LOCK_FILE_NAME: &str = "grace-lock.json";
+
 
 impl Project
 {
 
+    fn uri_to_directory(uri: String) -> String
+    {
+        let reg_dir = uri.clone()
+        .replace(":", "_")
+        .replace("/", "_")
+        .replace("\\", "_");
+
+        reg_dir
+    }
+
     pub fn init(path: PathBuf) -> Self
     {
-        // create .grace dir
-        // create .grace-config
-        // create .grace file
-
         let mut grace_dir = path.clone();
-        grace_dir.push(".grace");
+        grace_dir.push(GRACE_ROOT_FOLDER);
         if grace_dir.exists()
         {
             panic!("This already seems to be a grace project.")
@@ -41,7 +55,7 @@ impl Project
         };
 
         let mut cfg_file = grace_dir.clone();
-        cfg_file.push(".grace-config");
+        cfg_file.push(GRACE_PROJECT_FILE_NAME);
         let mut file = File::create(cfg_file.to_str().unwrap()).expect("Failed to create config file");
         let _= file.write_all(serde_json::to_string(&result).unwrap().as_bytes());
 
@@ -51,14 +65,14 @@ impl Project
     pub fn open(path: PathBuf) -> Self
     {
         let mut grace_dir = path.clone();
-        grace_dir.push(".grace");
+        grace_dir.push(GRACE_ROOT_FOLDER);
         if !grace_dir.exists()
         {
             panic!("This is not a grace project.")
         }
 
         let mut gpath = grace_dir.clone();
-        gpath.push(".grace-config");
+        gpath.push(GRACE_PROJECT_FILE_NAME);
         
         let file  = File::open(gpath).expect(".grace-config file is missing");
         let reader = BufReader::new(file);
@@ -75,8 +89,8 @@ impl Project
         self.update_registry(&r);
 
         let mut cfg_file = self.project_dir.clone();
-        cfg_file.push(".grace");        // folder
-        cfg_file.push(".grace-config"); //file
+        cfg_file.push(GRACE_ROOT_FOLDER);
+        cfg_file.push(GRACE_PROJECT_FILE_NAME);
         let mut file = OpenOptions::new().write(true).open(cfg_file).expect("Failed to open config file");
         let _= file.write_all(serde_json::to_string(&self).unwrap().as_bytes());                 
     }
@@ -96,13 +110,10 @@ impl Project
         println!("updating registry {}", r.uri.clone());
 
         let mut registry_dir = self.project_dir.clone();
-        registry_dir.push(".grace");
+        registry_dir.push(GRACE_ROOT_FOLDER);
 
         // sanitize path:
-        let reg_dir = r.uri.clone()
-                                .replace(":", "_")
-                                .replace("/", "_")
-                                .replace("\\", "_");
+        let reg_dir = Self::uri_to_directory(r.uri.clone());
 
         registry_dir.push(reg_dir);
 
@@ -115,6 +126,7 @@ impl Project
         }
 
         let registry_content = std::fs::read_dir(registry_dir.clone()).unwrap();
+        let mut ok = false;
         for content in registry_content
         {
             if let Ok(entry) = content
@@ -123,10 +135,20 @@ impl Project
                 {
                     let git = git::GitClient::create();
                     // slightly wrong, git will checkout into a subfolder!                    
-                    git.cwd(entry.path().to_str().unwrap().to_string()).checkout("master".to_string());
+                    
+                    git.cwd(entry.path().to_str().unwrap().to_string())
+                        .fetch()
+                        .checkout("master".to_string())
+                        .pull();
+                    ok = true;
                     break;
                 }
             }
+        }
+
+        if !ok
+        {
+            println!("..failed.")
         }
 
     }
@@ -137,24 +159,30 @@ impl Project
         {
             println!("...{}", r.uri);
             let mut registry_dir = self.project_dir.clone();
-            registry_dir.push(".grace");
-            registry_dir.push(r.uri.clone());       // ToDo: This should be sanitized!    
+            registry_dir.push(GRACE_ROOT_FOLDER);
+            registry_dir.push(Self::uri_to_directory(r.uri.clone()));       // ToDo: This should be sanitized!    
 
             if registry_dir.exists()
             {                                
-                registry_dir.push("index.json");
-                let file  = File::open(registry_dir).expect("index.json is missing");
-                let reader = BufReader::new(file);
-                let packages: Vec<Package> = serde_json::from_reader(reader).expect("Malformed index.json");
+                registry_dir.push("index.json");                
+                let file  = File::open(registry_dir);
                 
-                for package in packages.iter()
+                if file.is_err()
+                {
+                    continue;
+                }
+
+                let reader = BufReader::new(file.unwrap());
+                let packages: PackageList = serde_json::from_reader(reader).expect("Malformed index.json");
+                
+                for package in packages.packagelist.iter()
                 {
                     if package.name == package_name
                     {
                         for version in package.versions.iter()
                         {
                             // ToDo: Chheck for SemVer compatibility!
-                            if version.name == package_version
+                            if version.id == package_version
                             {
                                 return Ok(version.clone());
                             }

@@ -9,9 +9,10 @@
             "request": "launch",
             "name": "Launch",
             "program": "${workspaceFolder}/target/debug/grace.exe",
-            "args": ["registry", "update"],
+            "args": ["package", "add", "APackage", "=", "1.0.1"],
             "cwd": "${workspaceFolder}/target/debug/"
         }
+    
 
     ]
 }

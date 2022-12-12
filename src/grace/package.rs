@@ -2,12 +2,19 @@ use std::{path::PathBuf, fs::File, io::BufReader};
 
 use serde::{Serialize, Deserialize};
 
-use super::project::Project;
+use super::project::{Project, GRACE_PACKAGE_FILE_NAME};
+
+pub enum VersionSelector 
+{
+    StrictEquals,  // =
+    LargerEquals,  // >=
+    Compatible,    // ~=
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PackageVersion
 {
-    pub name: String,
+    pub id: String,
     pub commit_hash: String
 }
 
@@ -15,7 +22,14 @@ pub struct PackageVersion
 pub struct Package
 {
     pub name: String,
+    pub uri: String,
     pub versions: Vec<PackageVersion>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PackageList
+{
+    pub packagelist: Vec<Package>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -32,8 +46,17 @@ impl PackageDependency
     {
 
         let mut grace_file = path.clone();
-        grace_file.push(".grace");
-        let file  = File::open(grace_file).expect(".grace file is missing");
+        grace_file.push(GRACE_PACKAGE_FILE_NAME);
+        let file: File;
+        if !grace_file.exists()
+        {            
+            return vec![]
+        }
+        else
+        {
+            file = File::open(grace_file).expect(".grace file is missing");
+        }
+         
         let reader = BufReader::new(file);
         let data: Vec<Self> = serde_json::from_reader(reader).expect("Project configuration is corrupt");
         data
@@ -44,7 +67,7 @@ impl PackageDependency
 
     }
 
-    pub fn add_package(path: PathBuf, package_name: String, package_version: String)
+    pub fn add_package(path: PathBuf, package_name: String, version_selector: VersionSelector, package_version: String)
     {
         let p = Project::open(path.clone());
         if let Ok(package) = p.resolve_package(package_name.clone(), package_version.clone())

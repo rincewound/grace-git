@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Arg,Command};
+use grace::package::VersionSelector;
 
 mod grace;
 
@@ -28,7 +29,9 @@ fn cli() -> Command
             .subcommand_required(true)
             .subcommand(Command::new("add")
                 .arg_required_else_help(true)
-                .arg(Arg::new("name").help("The name and version of the package e.g. APackage/1.0.0"))
+                .arg(Arg::new("name").help("The name and version of the package e.g. APackage/1.0.0").required(true))
+                .arg(Arg::new("versionselector").help("A version selector such as =, ~= , >= ...").required(true))
+                .arg(Arg::new("version").help("A package version such as 1.0.1").required(true))
             )
             .subcommand(Command::new("update"))
             .subcommand(Command::new("publish"))
@@ -59,9 +62,18 @@ fn do_package_command(submatches: &clap::ArgMatches) {
     {
         Some(("add", submatches)) =>
         {
+            let vs =match submatches.get_one::<String>("versionselector").unwrap().clone().as_str()
+            {
+                "=" => VersionSelector::StrictEquals,
+                ">=" => VersionSelector::LargerEquals,
+                "~=" => VersionSelector::Compatible,
+                _ => panic!("Invalid version selector, nust be in [=, >=, ~=]")
+            };
+
             grace::package::PackageDependency::add_package(PathBuf::from("."), 
             submatches.get_one::<String>("name").unwrap().clone(), 
-            "1.0.0".to_string())
+            vs,
+            submatches.get_one::<String>("version").unwrap().clone(), )
         }
 
         _ => unreachable!()

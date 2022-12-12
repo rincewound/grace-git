@@ -30,7 +30,7 @@ impl GitClient
         self
     }
 
-    pub fn fetch(self)
+    pub fn fetch(self) -> Self
     {
         let mut git = Command::new("git");
 
@@ -38,22 +38,22 @@ impl GitClient
             .args(["fetch".to_string()])
             .output()
             .expect("FETCH failed"));
+        self
     }
 
 
-    pub fn clone(self, uri: String)
+    pub fn clone(self, uri: String) -> Self
     {
         let mut git = Command::new("git");
 
         self.process_output(git.current_dir(self.cwd.clone())
-            .args(["clone".to_string(), uri])
+            .args(["clone".to_string(), uri, ".".to_string()])
             .output()
             .expect("CLONE failed"));
-
-        
+        self        
     }
 
-    pub fn pull(self)
+    pub fn pull(self) -> Self
     {
         let mut git = Command::new("git");
 
@@ -61,10 +61,11 @@ impl GitClient
             .arg("pull")
             .output()
             .expect("PULL failed"));
+        self
             
     }
 
-    pub fn checkout(self, commit_hash: String) 
+    pub fn checkout(self, commit_hash: String) -> Self
     {
         let mut git = Command::new("git");
 
@@ -72,5 +73,6 @@ impl GitClient
             .args(["checkout".to_string(), commit_hash])
             .output()
             .expect("CHECKOUT failed"));
+        self
     }
 }
