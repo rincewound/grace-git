@@ -42,7 +42,7 @@ impl GitClient {
 
         self.process_output(
             git.current_dir(self.cwd.clone())
-                .args(["clone".to_string(), uri, ".".to_string()])
+                .args(["clone".to_string(), uri])
                 .output()
                 .expect("CLONE failed"),
         );

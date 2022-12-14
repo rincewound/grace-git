@@ -42,6 +42,10 @@ impl Project {
 
         std::fs::create_dir(grace_dir.clone()).expect("Cannot create .grace dir");
 
+        let mut package_dir = path.clone();
+        package_dir.push("packages");
+        std::fs::create_dir(package_dir.clone()).expect("Cannot create package dir");
+
         let result = Self {
             registries: vec![],
             project_dir: path.clone(),
@@ -196,7 +200,7 @@ impl Project {
                             found_package = select_package(
                                 package,
                                 version,
-                                p.0,                                
+                                p.0,
                                 &sought_version,
                                 found_package,
                                 selector,

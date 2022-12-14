@@ -7,6 +7,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use super::{
+    git,
     project::{Project, GRACE_PACKAGE_FILE_NAME, GRACE_PACKAGE_LOCK_FILE_NAME},
     semver::SemanticVersion,
 };
@@ -39,7 +40,7 @@ pub struct PackageList {
     pub packagelist: Vec<Package>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PackageDependency {
     pub name: String,
     pub version: String,
@@ -107,14 +108,32 @@ impl PackageDependency {
                 };
 
                 println!("Installing package {}", items[0].to_string());
-                Self::add_package(
+                let dep = Self::add_package(
                     path.clone(),
                     items[0].to_string(),
                     version_selector,
                     version,
-                )
+                );
+
+                Self::install_single_dependency(path.clone(), dep);
             }
         }
+    }
+
+    fn install_single_dependency(path: PathBuf, dep: PackageDependency) {
+        let repo = dep.uri;
+        let commit = dep.commit_hash;
+        let mut target_dir = path.clone();
+        target_dir.push("packages");
+        let mut package_dir = target_dir.clone();
+        package_dir.push(dep.name);
+
+        let git = git::GitClient::create();
+        git.cwd(target_dir.to_str().unwrap().to_string())
+            .clone(repo)
+            .cwd(package_dir.to_str().unwrap().to_string())
+            .fetch()
+            .checkout(commit);
     }
 
     pub fn add_package(
@@ -122,7 +141,7 @@ impl PackageDependency {
         package_name: String,
         version_selector: VersionSelector,
         package_version: SemanticVersion,
-    ) {
+    ) -> PackageDependency {
         let p = Project::open(path.clone());
         if let Some(package) = p.resolve_package(
             package_name.clone(),
@@ -136,14 +155,16 @@ impl PackageDependency {
                 .filter(|x| x.name != package_name)
                 .collect();
 
-            actual_list.push(PackageDependency {
+            let dep = PackageDependency {
                 name: package_name,
                 version: package.0.id,
                 uri: package.1,
                 commit_hash: package.0.commit_hash,
-            });
+            };
 
+            actual_list.push(dep.clone());
             Self::store_package_list(path.clone(), actual_list);
+            return dep;
         } else {
             panic!(
                 "The package {} in version {} is not available in your registries ",

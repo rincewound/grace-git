@@ -57,24 +57,6 @@ fn do_package_command(submatches: &clap::ArgMatches) {
     match submatches.subcommand() {
         Some(("install", submatches)) => {
             grace::package::PackageDependency::install(PathBuf::from("."))
-            // let vs = match submatches
-            //     .get_one::<String>("versionselector")
-            //     .unwrap()
-            //     .clone()
-            //     .as_str()
-            // {
-            //     "=" => VersionSelector::StrictEquals,
-            //     ">" => VersionSelector::LargerEquals,
-            //     "~=" => VersionSelector::Compatible,
-            //     _ => panic!("Invalid version selector, nust be in [=, >=, ~=]"),
-            // };
-
-            // grace::package::PackageDependency::add_package(
-            //     PathBuf::from("."),
-            //     submatches.get_one::<String>("name").unwrap().clone(),
-            //     vs,
-            //     submatches.get_one::<String>("version").unwrap().clone(),
-            // )
         }
 
         _ => unreachable!(),
