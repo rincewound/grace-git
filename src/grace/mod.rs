@@ -1,11 +1,11 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-pub mod project;
-pub mod package;
 mod git;
+pub mod package;
+pub mod project;
+pub mod semver;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Registry
-{
-    pub uri: String
+pub struct Registry {
+    pub uri: String,
 }
