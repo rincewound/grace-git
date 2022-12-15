@@ -61,12 +61,12 @@ Setup the current directory as root of a Grace enabled project.
 ### Registry Commands
 #### add
 Adds a new registry URL to the project. Example
-`grace registry --add https://foo.bar` 
+`grace registry add https://foo.bar` 
 
 Local, windows
-`grace registry --add file://c/blah/blubb` 
+`grace registry add c:/blah/blubb` 
 Local linux
-`grace registry --add file://~/blah/blubb` 
+`grace registry add ~/blah/blubb` 
 
 #### update
 Fetches the indexfile from all registries (or updates it!)
@@ -75,29 +75,19 @@ Example
 
 #### remove
 Remove a registry
-`grace remove --add https://foo.bar` 
+`grace registry remove https://foo.bar` 
 
 -> Removing a registry will not remove packages associated with the registry
 
 ### Package Commands
-#### add
-Adds a package to the project, example:
-`grace package add APackage/1.0.0`
 
-This will add the line "APackage=1.0.0" to the .grace file. Before the 
-package is added, the registry indices of the available registries are
-queried for the presence of the package. The package is only added, if
-it is found. If multiple registries contain the package it is added 
-from the registry where it is found first, i.e. the one which is first
-in the .grace-config file.
-
-#### update
+#### install
 Processes the .grace file and proceed to clone all packages, that are
 mentioned there. The update is recursive, i.e. if packages in turn
 contain .grace files the update command is applied there as well.
 
 Example:
-`grace package update`
+`grace package install`
 
 Note that Grace will only update if the package version in the .grace file
 changed.
@@ -138,8 +128,8 @@ If the package was not yet found in any registry an additional parameter is requ
  +-----[cache-dir]
  |          +----[package1]
  |          +----[package2]
- +-----.grace
- +-----.grace-lock
+ +-----grace-packages.txt
+ +-----grace-lock.json
 ```
 
 The cache dir contains all downloaded packages. Grace allows to configure the location of the cache dir on a per-project basis by setting the "cache-dir" property in the .grace-config file. Note that subprojects will not inherit this property but instead use their own setting.

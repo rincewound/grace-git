@@ -41,7 +41,7 @@ impl SemanticVersion {
         return SemanticVersion::new(major, minor, patch);
     }
 
-    pub fn matchTo(&self, other: &SemanticVersion) -> Compatibility {
+    pub fn match_to(&self, other: &SemanticVersion) -> Compatibility {
         if self.major == other.major {
             if self.minor == other.minor {
                 if self.patch == other.patch {
@@ -96,7 +96,7 @@ mod tests {
         let v1 = SemanticVersion::new(1, 0, 4);
         let v2 = SemanticVersion::new(1, 0, 4);
 
-        assert!(v1.matchTo(&v2) == Compatibility::Exact)
+        assert!(v1.match_to(&v2) == Compatibility::Exact)
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod tests {
         let v1 = SemanticVersion::new(1, 0, 4);
         let v2 = SemanticVersion::new(1, 0, 0);
 
-        assert!(v1.matchTo(&v2) == Compatibility::Partial)
+        assert!(v1.match_to(&v2) == Compatibility::Partial)
     }
 
     #[test]
@@ -112,7 +112,7 @@ mod tests {
         let v1 = SemanticVersion::new(2, 0, 4);
         let v2 = SemanticVersion::new(1, 0, 0);
 
-        assert!(v1.matchTo(&v2) == Compatibility::Breaking)
+        assert!(v1.match_to(&v2) == Compatibility::Breaking)
     }
 
     #[test]
@@ -120,7 +120,7 @@ mod tests {
         let v1 = SemanticVersion::new(2, 2, 4);
         let v2 = SemanticVersion::new(2, 1, 0);
 
-        assert!(v1.matchTo(&v2) == Compatibility::Compatible)
+        assert!(v1.match_to(&v2) == Compatibility::Compatible)
     }
 
     #[test]

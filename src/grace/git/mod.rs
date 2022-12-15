@@ -1,6 +1,6 @@
 use std::{
     io::Write,
-    process::{Command, ExitStatus, Output},
+    process::{Command, Output},
 };
 
 pub struct GitClient {

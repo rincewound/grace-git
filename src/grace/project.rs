@@ -221,7 +221,7 @@ fn is_usable_for(
     version_b: &SemanticVersion,
     selector: VersionSelector,
 ) -> bool {
-    let compat = version_a.matchTo(version_b);
+    let compat = version_a.match_to(version_b);
     match compat {
         crate::grace::semver::Compatibility::Breaking => return false,
         crate::grace::semver::Compatibility::Exact => {
@@ -253,7 +253,7 @@ fn select_package(
     let found_version = new_selected_version.as_semver();
     let current_version = last_selected_version.as_semver();
     if current_version < found_version {
-        let compat = sought_version.matchTo(&found_version);
+        let compat = sought_version.match_to(&found_version);
 
         match compat {
             crate::grace::semver::Compatibility::Breaking => return found_package,

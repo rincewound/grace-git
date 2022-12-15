@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use clap::{Arg, Command};
-use grace::package::VersionSelector;
 
 mod grace;
 
@@ -40,7 +39,7 @@ fn main() {
     let matches = cli().get_matches();
 
     match matches.subcommand() {
-        Some(("init", submatches)) => {
+        Some(("init", _)) => {
             init_project();
         }
         Some(("registry", submatches)) => {
@@ -55,7 +54,7 @@ fn main() {
 
 fn do_package_command(submatches: &clap::ArgMatches) {
     match submatches.subcommand() {
-        Some(("install", submatches)) => {
+        Some(("install", _)) => {
             grace::package::PackageDependency::install(PathBuf::from("."))
         }
 
@@ -75,7 +74,7 @@ fn do_registry_command(submatches: &clap::ArgMatches) {
             project.add_registry(submatches.get_one::<String>("uri").unwrap().clone());
         }
 
-        Some(("update", submatches)) => {
+        Some(("update", _)) => {
             let project = grace::project::Project::open(PathBuf::from("."));
             project.update_registries();
         }
