@@ -116,26 +116,17 @@ impl Project {
             let _ = std::fs::create_dir(registry_dir.clone());
             let git = git::GitClient::create();
             git.cwd(registry_dir.clone().to_str().unwrap().to_string())
-                .clone(r.uri.clone(), false);
+                .clone(r.uri.clone(), true);
         }
 
-        let registry_content = std::fs::read_dir(registry_dir.clone()).unwrap();
-        let mut ok = false;
-        for content in registry_content {
-            if let Ok(entry) = content {
-                if entry.file_type().unwrap().is_dir() {
-                    let git = git::GitClient::create();
-                    // slightly wrong, git will checkout into a subfolder!
-
-                    git.cwd(entry.path().to_str().unwrap().to_string())
-                        .fetch()
-                        .checkout("master".to_string())
-                        .pull();
-                    ok = true;
-                    break;
-                }
-            }
-        }
+        let git = git::GitClient::create();
+        let ok = git.cwd(registry_dir.to_str().unwrap().to_string())
+            .silent()
+            .init()
+            .remote(r.uri.clone())
+            .pull()
+            .fetch()
+            .err();
 
         if !ok {
             println!("..failed.")

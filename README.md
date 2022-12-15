@@ -18,23 +18,21 @@ Registry Format
 At its core the registry is just a large JSON File, with the following format
 ```json
 {
-    packages: [
+    "packagelist": [
         {
-            name: "PackageName",
-            uri: "repository uri",
-            versions: [
+            "name": "APackage",
+            "uri": "E:/code/grace/SomePackage",
+            "versions": [
                 {
-                    id: "0.1.0",
-                    commit_id: "asd93123909ß0129393"
+                    "id": "0.1.0",
+                    "commit_hash": "a116c8f923485c34c6f1fa9ad7a2ba459b46212a"
                 },
                 {
-                    id: "1.0.1",
-                    commit_id: "fjalödjawsö"
+                    "id": "1.0.1",
+                    "commit_hash": "a116c8f923485c34c6f1fa9ad7a2ba459b46212a"
                 }
-                ...
             ]
-        },
-        ...
+        }
     ]
 }
 ```
@@ -134,3 +132,7 @@ If the package was not yet found in any registry an additional parameter is requ
 
 The cache dir contains all downloaded packages. Grace allows to configure the location of the cache dir on a per-project basis by setting the "cache-dir" property in the .grace-config file. Note that subprojects will not inherit this property but instead use their own setting.
 
+
+## Using Grace
+Grace makes no assumptions as to the kind of projects it is used with. It just uses git to checkout
+packages and place them into the package directory.
