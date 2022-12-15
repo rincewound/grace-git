@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{DirEntry, File},
     io::{self, BufRead, BufReader, Lines, Write},
     path::PathBuf,
 };
@@ -115,25 +115,40 @@ impl PackageDependency {
                     version,
                 );
 
-                Self::install_single_dependency(path.clone(), dep);
+                if !Self::install_single_dependency(path.clone(), dep.clone()) {
+                    println!("Failed to install dependency {}", dep.name);
+                } else {
+                    println!("Installed successfully @ {}", dep.version);
+                }
             }
         }
     }
 
-    fn install_single_dependency(path: PathBuf, dep: PackageDependency) {
+    fn install_single_dependency(path: PathBuf, dep: PackageDependency) -> bool {
         let repo = dep.uri;
         let commit = dep.commit_hash;
         let mut target_dir = path.clone();
         target_dir.push("packages");
         let mut package_dir = target_dir.clone();
-        package_dir.push(dep.name);
+        package_dir.push(dep.name.clone());
 
+        if !package_dir.exists() {
+            let _ = std::fs::create_dir(package_dir.clone());
+        }
+
+        // Trouble: git insists on creating a new folder for the clone
+        // but we don't know ahead of time, what that folder is called
+        // howver, we have to enter the folder in order to be able to
+        // checkout the commit attached to the package
         let git = git::GitClient::create();
-        git.cwd(target_dir.to_str().unwrap().to_string())
-            .clone(repo)
-            .cwd(package_dir.to_str().unwrap().to_string())
+        git.cwd(package_dir.to_str().unwrap().to_string())
+            .silent()
+            .init()
+            .remote(repo)
+            .pull()
             .fetch()
-            .checkout(commit);
+            .checkout(commit)
+            .err()
     }
 
     pub fn add_package(

@@ -116,7 +116,7 @@ impl Project {
             let _ = std::fs::create_dir(registry_dir.clone());
             let git = git::GitClient::create();
             git.cwd(registry_dir.clone().to_str().unwrap().to_string())
-                .clone(r.uri.clone());
+                .clone(r.uri.clone(), false);
         }
 
         let registry_content = std::fs::read_dir(registry_dir.clone()).unwrap();
@@ -170,13 +170,13 @@ impl Project {
         package_version: SemanticVersion,
         selector: VersionSelector,
     ) -> Option<(PackageVersion, String)> {
-        println!("Checking registries for package {}", package_name);
+        println!("  Checking registries for package {}", package_name);
 
         let mut found_package: Option<(PackageVersion, String)> = None;
         let sought_version = package_version;
 
         for r in self.registries.iter() {
-            println!("...{}", r.uri);
+            println!("  ...{}", r.uri);
 
             if let Some(packages) = self.fetch_packages(r) {
                 for package in packages
@@ -188,7 +188,9 @@ impl Project {
                         if let None = found_package {
                             // this should only ever happen if the found package's version is actually
                             // compatible to the one we've passed in
-                            found_package = Some((version.clone(), package.uri.clone()));
+                            if is_usable_for(&version.as_semver(), &sought_version, selector) {
+                                found_package = Some((version.clone(), package.uri.clone()));
+                            }
                         }
 
                         if let Some(p) = found_package.clone() {
@@ -212,6 +214,32 @@ impl Project {
         }
         found_package
     }
+}
+
+fn is_usable_for(
+    version_a: &SemanticVersion,
+    version_b: &SemanticVersion,
+    selector: VersionSelector,
+) -> bool {
+    let compat = version_a.matchTo(version_b);
+    match compat {
+        crate::grace::semver::Compatibility::Breaking => return false,
+        crate::grace::semver::Compatibility::Exact => {
+            return true;
+        }
+        crate::grace::semver::Compatibility::Partial => {
+            if selector == VersionSelector::LargerEquals || selector == VersionSelector::Compatible
+            {
+                return true;
+            }
+        }
+        crate::grace::semver::Compatibility::Compatible => {
+            if selector == VersionSelector::LargerEquals {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 fn select_package(
