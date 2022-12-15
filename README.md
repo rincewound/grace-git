@@ -8,7 +8,9 @@ Grace is a Git based package manager that allows you to
 
 Think Cargo + VCPKG
 
-Registry Format
+Note: Grace is experimental and currently not meant for production use. 
+
+## Registry Format
 * The registry is a git repository that contains data about all packages available
 * The registry does not host packages itself, instead it only contains meta informations such as
     * Versions
